@@ -1,12 +1,14 @@
 // Global app controller
-// API de436be06b7ba0b8e3d0ec04de248516 31e03ea0c6b1b447ebbb0d636e253f1e
-// https://www.food2fork.com/api/search
 // axios like fetch() but compatible for all browsers, and immediately return JSON
 
 import Search from './models/Search';
 import Recipe from './models/Recipe';
+import List from './models/List';
+import Likes from './models/Likes';
 import * as searchView from './views/searchView';
 import * as recipeView from './views/recipeView';
+import * as listView from './views/listView';
+import * as likesView from './views/likesView';
 import {elements, renderLoader, clearLoader} from './views/base';
 
 /**
@@ -56,6 +58,7 @@ elements.searchForm.addEventListener('submit', e => {
 });
 
 elements.searchResPage.addEventListener('click', e => {
+    alert("aaa");
     const btn = e.target.closest('.btn-inline');
     if(btn){
         const goToPage = parseInt(btn.dataset.goto, 10);
@@ -94,7 +97,7 @@ const controlRecipe = async () => {
 
             // render recipe
             clearLoader();
-            recipeView.renderRecipe(states.recipe, false);
+            recipeView.renderRecipe(states.recipe, states.likes.isLiked(id));
         }catch(err){
             alert('Something went wrong !' + err);
         }
@@ -103,6 +106,86 @@ const controlRecipe = async () => {
 
 ['hashchange', 'load'].forEach(event => window.addEventListener(event, controlRecipe));
 
+/**
+ * LIST CONTROLLER
+ */
+
+ const controlList = () => {
+    // create new List if there in none yet
+    if(!states.list) states.list = new List();
+
+    // add each ingredient to list
+    states.recipe.ingredients.forEach(el => {
+        const item = states.list.addItem(el.count, el.unit, el.ingredient);
+        listView.renderItem(item);
+    });
+ };
+
+//  Handle list edit and update list items events
+elements.shopping.addEventListener('click', e => {
+    const id = e.target.closest('.shopping__item').dataset.itemid;
+
+    // Handle delete button
+    if(e.target.matches('.shopping__delete, .shopping__delete *')){
+        // Delete from Model
+        states.list.deleteItem(id);
+
+        // Delete from UI
+        listView.deleteItem(id);
+    }
+    // Handle count update
+    else if(e.target.matches('.shopping__count--value')){
+        const val = parseFloat(e.target.value, 10);
+        states.list.updateCount(id, val);
+    }
+});
+
+/**
+ * LIKE CONTROLLER
+ */
+
+ //TESTING
+states.likes = new Likes();
+likesView.toggleLikeMenu(states.likes.getNumsLiked());
+// 
+
+
+const controlLike = () => {
+    if(!states.likes) states.likes = new Likes();
+    const currentID = states.recipe.id;
+
+    // User has NOT yet liked current recipe
+    if(!states.likes.isLiked(currentID)){
+        // add like to states
+        const newLike = states.likes.addLike(
+            currentID, 
+            states.recipe.title, 
+            states.recipe.author, 
+            states.recipe.img
+        );
+        // Toggle like button
+        likesView.toggleLikeBtn(true);
+
+        // Add to like tab UI
+        likesView.renderLike(newLike);
+    }
+    // User HAS yet liked current recipe
+    else{
+        // Remove like from states
+        states.likes.deleteLike(currentID);
+
+        // Toggle like button
+        likesView.toggleLikeBtn(false);
+
+        // Remove to like tab UI
+        likesView.deleteLike(currentID);
+    }
+
+    likesView.toggleLikeMenu(states.likes.getNumsLiked());
+};
+ 
+
+// Handling recipe button click
 elements.recipe.addEventListener('click', e => {
     if(e.target.matches('.btn-decrease, .btn-decrease *')){
         if(states.recipe.servings > 1){
@@ -112,5 +195,14 @@ elements.recipe.addEventListener('click', e => {
     }else if(e.target.matches('.btn-increase, .btn-increase *')){
         states.recipe.updateServings('inc');
         recipeView.updateServingsIngredients(states.recipe);
+    }else if(e.target.matches('.recipe__btn--add, .recipe__btn--add *')){
+        // add ingredient to shopping list
+        controlList();
+    }else if(e.target.matches('.recipe__love, .recipe__love *')){
+        // call like controller
+        controlLike();
     }
 });
+
+
+window.test = states;
