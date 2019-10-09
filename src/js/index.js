@@ -144,11 +144,19 @@ elements.shopping.addEventListener('click', e => {
  * LIKE CONTROLLER
  */
 
- //TESTING
-states.likes = new Likes();
-likesView.toggleLikeMenu(states.likes.getNumsLiked());
-// 
+// restore liked recipes on page load
+window.addEventListener('load', () => {
+    states.likes = new Likes();
 
+    // restore data from localStorage
+    states.likes.readLocalStorage();
+
+    // show like menu
+    likesView.toggleLikeMenu(states.likes.getNumsLiked());
+
+    // render existing liked recipe was storaged
+    states.likes.likes.forEach(el => likesView.renderLike(el));
+});
 
 const controlLike = () => {
     if(!states.likes) states.likes = new Likes();
