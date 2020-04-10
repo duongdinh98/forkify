@@ -10,7 +10,9 @@ export default class Recipe {
 
   async getRecipe() {
     try {
-      const res = await axios(`http://127.0.0.1:6464/api/v1/recipe/${this.id}`);
+      const res = await axios(
+        `https://f2fapi.herokuapp.com/api/v1/recipe/${this.id}`
+      );
       this.title = res.data.recipe.title;
       this.author = res.data.recipe.publisher;
       this.img = res.data.recipe.image_url;
